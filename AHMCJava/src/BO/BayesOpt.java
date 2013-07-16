@@ -1,13 +1,14 @@
 package BO;
 
-import org.jblas.DoubleMatrix; 
+import org.jblas.DoubleMatrix;
 import org.jblas.Decompose;
 import org.jblas.MatrixFunctions;
 import org.jblas.Solve;
 import org.jblas.ranges.IntervalRange;
-
+import java.text.DecimalFormat;
 import soo.SOO;
 import soo.TreeNode;
+import utils.Objective;
 
 public class BayesOpt { 
 	private double noise = 0;
@@ -19,10 +20,12 @@ public class BayesOpt {
 	private DoubleMatrix X = null;
 	private DoubleMatrix Y = null;
 	private int D = -1;
+	private int sooIter = 500;
+	private boolean useScale = false;
 	
 	private DoubleMatrix kernelCholL = null;
-	
 	private CovModel covModel = null;
+	
 	
 	public BayesOpt(Objective obj, DoubleMatrix initPt, CovModel covModel, 
 			DoubleMatrix bound, double noise) {
@@ -43,11 +46,22 @@ public class BayesOpt {
 				add(this.noise));
 	}
 	
+	public void setSooIter(int num) {
+		this.sooIter = num;
+	}
+	
+	public void useScale(boolean choice) {
+		this.useScale = choice;
+	}
+	
+	/**
+	 * Updates the model to take into account the new point x.
+	 * @param x is a new point
+	 */
 	public void updateModel(DoubleMatrix x) {
 		DoubleMatrix ptEval = x.mul(this.bound.getColumn(1).sub(
 				this.bound.getColumn(0))).add(this.bound.getColumn(0));		
 		double f = this.obj.functionValue(ptEval);
-		System.out.println(f);
 		this.updateKenel(x);
 		this.n = this.n + 1;
 		this.X.putRow(this.n-1, x);
@@ -55,11 +69,17 @@ public class BayesOpt {
 		
 		if (f > this.maxVal) {
 			this.maxVal = f;
-			//this.scale = 4.0/this.maxVal;
+			if (this.useScale) {
+				this.scale = 4.0/this.maxVal;
+			}
 		}
 	}
 	
 	
+	/**
+	 * Update the kernel so that the new point is taken into account.
+	 * @param x is a new point.
+	 */
 	public void updateKenel(DoubleMatrix x) {
 		IntervalRange rangeR = new IntervalRange(0,  this.n);
 		IntervalRange rangeC = new IntervalRange(0,  this.n);
@@ -79,6 +99,10 @@ public class BayesOpt {
 		this.kernelCholL = newKernelCholL;
 	}
 	
+	/**
+	 * @param x
+	 * @return Compute the posterior mean and variance at point x.
+	 */
 	public Pair<DoubleMatrix, DoubleMatrix> meanVar(DoubleMatrix x) {
 		IntervalRange range = new IntervalRange(0,  this.n);
 		DoubleMatrix k_x = this.covModel.cov(this.X.getRows(range), x);
@@ -97,6 +121,11 @@ public class BayesOpt {
 		return this.ucb(x, 1.0);
 	}
 	
+	/**
+	 * @param x
+	 * @param si is a scaling parameter.
+	 * @return Compute the upper confidence bound (ucb) at point x.
+	 */
 	public DoubleMatrix ucb(DoubleMatrix x, double si) {
 		Pair<DoubleMatrix, DoubleMatrix> mv = this.meanVar(x);
 		DoubleMatrix std = MatrixFunctions.sqrt(mv.getRight());
@@ -109,13 +138,17 @@ public class BayesOpt {
 		return acq;
 	}
 	
+	/**
+	 * Use SOO to optimise the acquisition function.
+	 * @return The approximate maximiser of the acquisition function
+	 */
 	public DoubleMatrix maximizeAcq() {
 		Acquisition acq = new Acquisition(this);
 		SOO opt = new SOO(acq, this.D);
 		
 		double maxVal = Double.NEGATIVE_INFINITY;
 		TreeNode bestNode = null;
-		for (int ii = 0; ii < 500; ii++) {
+		for (int ii = 0; ii < this.sooIter; ii++) {
 			TreeNode node = opt.next();
 			double val = node.getEvalutionValue();
 			if (val > maxVal) {
@@ -126,29 +159,41 @@ public class BayesOpt {
 		return (new DoubleMatrix(bestNode.pointOfEvalution())).transpose();
 	}
 	
+	/**
+	 * @param maxIter is the total number of iterations we use to maximise the 
+	 * objective function.
+	 */
 	public void maximize(int maxIter) {
+		DecimalFormat df = new DecimalFormat("##.####");
+		double maxVal = Double.NEGATIVE_INFINITY;
 		for (int i = 0; i < maxIter; i++) {
-			System.out.println(i);
 			DoubleMatrix pt = this.maximizeAcq();
-			pt.print();
 			updateModel(pt);
+			
+			double curY = this.Y.get(i+1);
+			if (curY > maxVal) {
+				maxVal = curY;
+			}
+			System.out.println("Iteration " + (i+1) + "\nCur Val: "+ 
+					df.format(curY).toString() + 
+					" Best val: " + df.format(maxVal).toString());
 		}
-		IntervalRange range = new IntervalRange(0,  this.n);
-		System.out.println(this.Y.get(range, 0).max());
+		
+		System.out.println(maxVal);
 	}
 	
 	public static void main(String args[]) {
 		DoubleMatrix initPt = DoubleMatrix.rand(2).transpose();
 		DoubleMatrix hyper = new DoubleMatrix(new double[] {0.072, 0.072, 1});
 		CovModel cov = new CovSEARD(hyper);
-		double noise = 1e-6;
+		double noise = 1e-10;
 		double[][] ba = {{-5.0, 10.0}, {0.0, 15.0}};
 		DoubleMatrix bound = new DoubleMatrix(ba);
 		Objective branin = new Branin();
 		
 		BayesOpt bo = new BayesOpt(branin, initPt, cov, bound, noise);
 		
-		bo.maximize(100);
+		bo.maximize(50);
 		System.out.println("Finished");
 	}
 }

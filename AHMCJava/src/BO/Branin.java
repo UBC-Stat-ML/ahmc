@@ -2,9 +2,7 @@ package BO;
 
 import org.jblas.DoubleMatrix;
 
-public interface Objective {
-	public double functionValue(DoubleMatrix vec);
-}
+import utils.Objective;
 
 class Branin implements Objective{
 	public double functionValue(DoubleMatrix vec) {

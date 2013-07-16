@@ -5,8 +5,9 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Iterator;
 
-import BO.Objective;
 import org.jblas.DoubleMatrix;
+
+import utils.Objective;
 
 public class SOO {
 
