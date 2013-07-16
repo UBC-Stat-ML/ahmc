@@ -18,6 +18,7 @@ import soo.TreeNode;
 import utils.Pair;
 
 public class BayesOpt { 
+	
 	private double noise = 0;
 	private DoubleMatrix bound = null;
 	private double scale = 1;
@@ -200,7 +201,7 @@ public class BayesOpt {
 		
 		BayesOpt bo = new BayesOpt(branin, initPt, cov, bound, noise);
 		
-		bo.maximize(100);
+		bo.maximize(50);
 		System.out.println("Finished");
 	}
 }
