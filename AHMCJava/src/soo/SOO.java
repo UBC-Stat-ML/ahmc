@@ -192,7 +192,6 @@ class Level {
 	private ArrayList<TreeNode> levelList;
 	private double maxVal = Double.NEGATIVE_INFINITY;
 	private TreeNode maxNode = null;
-	private int depth = -1;
 
 	public Level() {
 		this.levelList = new ArrayList<TreeNode>();

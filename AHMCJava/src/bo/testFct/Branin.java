@@ -1,4 +1,4 @@
-package BO.testFct;
+package bo.testFct;
 
 import org.jblas.DoubleMatrix;
 

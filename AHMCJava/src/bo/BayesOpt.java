@@ -1,4 +1,4 @@
-package BO;
+package bo;
 
 import org.jblas.DoubleMatrix;
 import org.jblas.Decompose;
@@ -6,10 +6,11 @@ import org.jblas.MatrixFunctions;
 import org.jblas.Solve;
 import org.jblas.ranges.IntervalRange;
 
+import bo.kernel.CovModel;
+import bo.kernel.CovSEARD;
+import bo.testFct.Branin;
+
 import utils.Objective;
-import BO.kernel.CovModel;
-import BO.kernel.CovSEARD;
-import BO.testFct.Branin;
 
 import java.text.DecimalFormat;
 import soo.SOO;
@@ -199,7 +200,7 @@ public class BayesOpt {
 		
 		BayesOpt bo = new BayesOpt(branin, initPt, cov, bound, noise);
 		
-		bo.maximize(50);
+		bo.maximize(100);
 		System.out.println("Finished");
 	}
 }
