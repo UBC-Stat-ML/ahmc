@@ -1,10 +1,10 @@
-package BO;
+package BO.testFct;
 
 import org.jblas.DoubleMatrix;
 
 import utils.Objective;
 
-class Branin implements Objective{
+public class Branin implements Objective{
 	public double functionValue(DoubleMatrix vec) {
 		double x = vec.get(0);
 		double y = vec.get(1);

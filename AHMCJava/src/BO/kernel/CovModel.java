@@ -1,4 +1,4 @@
-package BO;
+package BO.kernel;
 
 import org.jblas.DoubleMatrix;
 

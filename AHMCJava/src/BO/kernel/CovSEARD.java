@@ -1,8 +1,9 @@
-package BO;
+package BO.kernel;
 
 import org.jblas.MatrixFunctions;
 import org.jblas.DoubleMatrix; 
 import org.jblas.ranges.IntervalRange;
+
 
 public class CovSEARD extends CovModel{
 	

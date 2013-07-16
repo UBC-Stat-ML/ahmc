@@ -5,10 +5,16 @@ import org.jblas.Decompose;
 import org.jblas.MatrixFunctions;
 import org.jblas.Solve;
 import org.jblas.ranges.IntervalRange;
+
+import utils.Objective;
+import BO.kernel.CovModel;
+import BO.kernel.CovSEARD;
+import BO.testFct.Branin;
+
 import java.text.DecimalFormat;
 import soo.SOO;
 import soo.TreeNode;
-import utils.Objective;
+import utils.Pair;
 
 public class BayesOpt { 
 	private double noise = 0;
@@ -20,7 +26,7 @@ public class BayesOpt {
 	private DoubleMatrix X = null;
 	private DoubleMatrix Y = null;
 	private int D = -1;
-	private int sooIter = 500;
+	private int sooIter = 800;
 	private boolean useScale = false;
 	
 	private DoubleMatrix kernelCholL = null;
@@ -50,7 +56,7 @@ public class BayesOpt {
 		this.sooIter = num;
 	}
 	
-	public void useScale(boolean choice) {
+	public void setUseScale(boolean choice) {
 		this.useScale = choice;
 	}
 	
