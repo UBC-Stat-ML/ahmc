@@ -64,19 +64,15 @@ public class HMC {
 		
 		double proposed_E = func.functionValue(proposal); 
 		double original_E = func.functionValue(lastSample);
-		
 		double proposed_K = p.transpose().mmul(p).div(2.0).toArray()[0]; 
 		double original_K = old_p.transpose().mmul(old_p).div(2.0).toArray()[0];
-		
 		double mr = -proposed_E +  original_E + original_K - proposed_K;
-		
 		
 		if (!Double.isNaN(mr)) {
 			mr = Math.min(Math.exp(mr), 1.0);
 		} else {
 			mr = 0.0;
 		}
-		
 		
 		boolean accept = true;
 		double energy = -proposed_E;
