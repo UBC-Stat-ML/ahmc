@@ -95,7 +95,7 @@ public class HMC {
 		GaussianExample ge = new GaussianExample(targetSigma, targetMean);
 		HMC hmc = new HMC(40, 0.05, ge, ge);
 		DoubleMatrix sample = new DoubleMatrix( new double[]{3.0, 5.0});
-		DoubleMatrix samples = hmc.run(0, 1000, sample);
+		DoubleMatrix samples = hmc.run(0, 2000, sample);
 		samples.columnMeans().print();
 	}
 }

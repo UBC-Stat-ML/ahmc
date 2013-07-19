@@ -71,47 +71,44 @@ public class AHMC {
 		return null;
 	}
 	
+	private DoubleMatrix convert(double epsilon, int L) {
+		DoubleMatrix param = new DoubleMatrix(new double[]{Math.log(epsilon), L});
+		DoubleMatrix ptEval = param.sub(this.bound.getColumn(0))
+				.div(this.bound.getColumn(1).sub(
+				this.bound.getColumn(0))).transpose();
+		return ptEval;
+	}
+	
 	public void sample() {
-		
 		this.totalRandomStep = 0;
 		DoubleMatrix meanParam = this.bound.rowMeans();
 		double epsilon = Math.exp(meanParam.toArray()[0]);
 		int L = (int) Math.ceil(meanParam.toArray()[1]);
-		int numAdapt = 0;
-		double reward = 0;
-		
-		DoubleMatrix ptEval = meanParam.sub(this.bound.getColumn(0))
-				.div(this.bound.getColumn(1).sub(
-				this.bound.getColumn(0))).transpose();
-		
+		int numAdapt = 0; double reward = 0;
+		DoubleMatrix ptEval = convert(epsilon, L); 
 		DoubleMatrix sample = this.initPt.transpose(); 
 		
 		for (int ii = 0; ii < this.numIterations; ii++) {
-			
 			if (ii % this.sizeAdapt == 0) {
-				if (this.adjustReward) {
-					reward = reward / Math.sqrt((double)L);
-				}
+				if (this.adjustReward) {reward = reward / Math.sqrt((double)L);}
 				numAdapt = numAdapt + 1;
-				
-				if (ii >= this.sizeAdapt) {
-					this.bo.updateModel(ptEval, reward);
-				}
-				
+				if (ii >= this.sizeAdapt) {this.bo.updateModel(ptEval, reward);}
 				double rate = anneal(ii);
 				
 				if (DoubleMatrix.rand(1).toArray()[0] < rate) {
-					ptEval = this.bo.maximizeAcq(rate);
-					DoubleMatrix nextPt = ptEval.mul(this.bound.getColumn(1).
+					DoubleMatrix nextPt = this.bo.maximizeAcq(rate).
+							mul(this.bound.getColumn(1).
 							sub(this.bound.getColumn(0))).
 							add(this.bound.getColumn(0));
-					
 					epsilon = Math.exp(nextPt.toArray()[0]);
 					L = (int) Math.ceil(nextPt.toArray()[1]);
+					ptEval = convert(epsilon, L);
 				}
+				System.out.format("Iter %3d L: %3d epsilon: %2.3f " +
+						"reward: %3.2f prob: %1.3f\n", 
+						numAdapt, L, epsilon, reward, rate);
 				reward = 0;
 			}
-			
 			DataStruct result = HMC.doIter(L, epsilon, sample, 
 					this.gradient, this.fun);
 			sample = result.next_q;
@@ -136,10 +133,10 @@ public class AHMC {
 				{{1.0, 0.99}, {0.99, 1.0}});
 		DoubleMatrix targetMean = new DoubleMatrix( new double[] {3.0, 5.0});
 		GaussianExample ge = new GaussianExample(targetSigma, targetMean);
-		double[][] ba = {{Math.log(1e-5), Math.log(1e-1)}, {1.0, 100.0}};
+		double[][] ba = {{Math.log(1e-3), Math.log(0.2)}, {1.0, 100.0}};
 		DoubleMatrix bound = new DoubleMatrix(ba);
 		
-		AHMC ahmc = new AHMC(2000, 1000, bound, ge, ge, 2);
+		AHMC ahmc = new AHMC(3000, 1000, bound, ge, ge, 2);
 		ahmc.sample();
 		ahmc.samples.columnMeans().print();
 	}
