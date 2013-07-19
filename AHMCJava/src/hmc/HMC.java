@@ -74,16 +74,18 @@ public class HMC {
 			mr = 0.0;
 		}
 		
+		DoubleMatrix nextSample = proposal;
+		
 		boolean accept = true;
 		double energy = -proposed_E;
 		if (DoubleMatrix.rand(1).toArray()[0] > mr) {
-			proposal = lastSample;
+			nextSample = lastSample;
 			accept = false;
 			energy = -original_E;
 		}
 		
-		return new DataStruct(proposal, accept, lastSample, mr, randomStep, 
-				energy);
+		return new DataStruct(nextSample, accept, proposal, lastSample, 
+				mr, randomStep, energy);
 	}
 	
 	public static void main(String[] args) {
@@ -93,7 +95,8 @@ public class HMC {
 		GaussianExample ge = new GaussianExample(targetSigma, targetMean);
 		HMC hmc = new HMC(40, 0.05, ge, ge);
 		DoubleMatrix sample = new DoubleMatrix( new double[]{3.0, 5.0});
-		hmc.run(0, 1000, sample);
+		DoubleMatrix samples = hmc.run(0, 1000, sample);
+		samples.columnMeans().print();
 	}
 }
 

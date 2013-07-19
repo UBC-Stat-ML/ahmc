@@ -40,9 +40,7 @@ public class BayesOpt {
 		this.covModel = covModel;
 		this.noise = noise;
 		this.bound = bound;
-		
 		this.D = initPt.columns;
-		
 		this.X = DoubleMatrix.zeros(2000, initPt.columns);
 		this.Y = DoubleMatrix.zeros(2000, 1);
 		X.putRow(0, initPt);
@@ -168,8 +166,8 @@ public class BayesOpt {
 	 * Use SOO to optimise the acquisition function.
 	 * @return The approximate maximiser of the acquisition function
 	 */
-	public DoubleMatrix maximizeAcq() {
-		Acquisition acq = new Acquisition(this);
+	public DoubleMatrix maximizeAcq(double si) {
+		Acquisition acq = new Acquisition(this, si);
 		SOO opt = new SOO(acq, this.D);
 		
 		double maxVal = Double.NEGATIVE_INFINITY;
@@ -183,6 +181,14 @@ public class BayesOpt {
 			}
 		}
 		return (new DoubleMatrix(bestNode.pointOfEvalution())).transpose();
+	}
+	
+	/**
+	 * Use SOO to optimise the acquisition function.
+	 * @return The approximate maximiser of the acquisition function
+	 */
+	public DoubleMatrix maximizeAcq() {
+		return this.maximizeAcq(1.0);
 	}
 	
 	/**
@@ -216,7 +222,7 @@ public class BayesOpt {
 		double[][] ba = {{-5.0, 10.0}, {0.0, 15.0}};
 		DoubleMatrix bound = new DoubleMatrix(ba);
 		Objective branin = new Branin();
-		
+		bound.print();
 		BayesOpt bo = new BayesOpt(branin, initPt, cov, bound, noise);
 		
 		bo.maximize(100);
@@ -227,14 +233,20 @@ public class BayesOpt {
 class Acquisition implements Objective {
 
 	private BayesOpt bo = null;
+	private double si = 1.0;
 	
 	public Acquisition(BayesOpt bo) {
 		this.bo = bo;
 	}
 	
+	public Acquisition(BayesOpt bo, double si) {
+		this(bo);
+		this.si = si;
+	}
+	
 	@Override
 	public double functionValue(DoubleMatrix vec) {
-		return this.bo.ucb(vec.transpose()).toArray()[0];
+		return this.bo.ucb(vec.transpose(), this.si).toArray()[0];
 	}
 	
 }
