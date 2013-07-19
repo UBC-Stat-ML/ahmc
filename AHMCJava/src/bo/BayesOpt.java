@@ -35,14 +35,12 @@ public class BayesOpt {
 	private CovModel covModel = null;
 	
 	
-	public BayesOpt(Objective obj, DoubleMatrix initPt, CovModel covModel, 
+	public BayesOpt(double initVal, DoubleMatrix initPt, CovModel covModel, 
 			DoubleMatrix bound, double noise) {
 		this.covModel = covModel;
 		this.noise = noise;
 		this.bound = bound;
-		this.obj = obj;
 		
-		double initVal = this.obj.functionValue(initPt);
 		this.D = initPt.columns;
 		
 		this.X = DoubleMatrix.zeros(2000, initPt.columns);
@@ -54,6 +52,16 @@ public class BayesOpt {
 				add(this.noise));
 	}
 	
+	
+	public BayesOpt(Objective obj, DoubleMatrix initPt, CovModel covModel, 
+			DoubleMatrix bound, double noise) {
+		this(0.0, initPt, covModel, bound, noise);
+		this.obj = obj;
+		double initVal = this.obj.functionValue(initPt);
+		Y.put(0, initVal);
+	}
+	
+	
 	public void setSooIter(int num) {
 		this.sooIter = num;
 	}
@@ -61,6 +69,7 @@ public class BayesOpt {
 	public void setUseScale(boolean choice) {
 		this.useScale = choice;
 	}
+	
 	
 	/**
 	 * Updates the model to take into account the new point x.
@@ -70,6 +79,15 @@ public class BayesOpt {
 		DoubleMatrix ptEval = x.mul(this.bound.getColumn(1).sub(
 				this.bound.getColumn(0))).add(this.bound.getColumn(0));		
 		double f = this.obj.functionValue(ptEval);
+		this.updateModel(x, f);
+	}
+	
+	
+	/**
+	 * Updates the model to take into account the new point x.
+	 * @param x is a new point
+	 */
+	public void updateModel(DoubleMatrix x, double f) {
 		this.updateKenel(x);
 		this.n = this.n + 1;
 		this.X.putRow(this.n-1, x);
@@ -201,7 +219,7 @@ public class BayesOpt {
 		
 		BayesOpt bo = new BayesOpt(branin, initPt, cov, bound, noise);
 		
-		bo.maximize(50);
+		bo.maximize(100);
 		System.out.println("Finished");
 	}
 }
