@@ -86,7 +86,7 @@ public class BayesOpt {
 	 * @param x is a new point
 	 */
 	public void updateModel(DoubleMatrix x, double f) {
-		this.updateKenel(x);
+		this.updateKernel(x);
 		this.n = this.n + 1;
 		this.X.putRow(this.n-1, x);
 		this.Y.put(this.n-1, f);
@@ -104,7 +104,7 @@ public class BayesOpt {
 	 * Update the kernel so that the new point is taken into account.
 	 * @param x is a new point.
 	 */
-	public void updateKenel(DoubleMatrix x) {
+	public void updateKernel(DoubleMatrix x) {
 		IntervalRange rangeR = new IntervalRange(0,  this.n);
 		IntervalRange rangeC = new IntervalRange(0,  this.n);
 		IntervalRange endRange = new IntervalRange(this.n,  this.n+1);

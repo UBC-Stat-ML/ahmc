@@ -86,12 +86,12 @@ class Bounds {
 
 	public Bounds(int dim) {
 		this.dim = dim;
-		this.initilize();
+		this.initialize();
 	}
 
 	public Bounds(int dim, double[][] bounds) {
 		this.dim = dim;
-		this.initilize(bounds);
+		this.initialize(bounds);
 	}
 
 	public double[][] copy() {
@@ -117,7 +117,7 @@ class Bounds {
 		return midpoint;
 	}
 
-	private void initilize() {
+	private void initialize() {
 		// Initilize standard bounds [0, 1]^d.
 		this.bounds = new double[this.dim][2];
 		for (int i = 0; i < this.dim; i++) {
@@ -132,7 +132,7 @@ class Bounds {
 		}
 	}
 
-	private void initilize(double[][] initBounds) {
+	private void initialize(double[][] initBounds) {
 		this.bounds = initBounds;
 	}
 }

@@ -2,6 +2,8 @@ package hmc;
 
 import lbfgsb.*;
 import java.util.ArrayList;
+import java.util.Random;
+
 import lbfgsb.Minimizer;
 import org.jblas.DoubleMatrix;
 import utils.MultiVariateObj;
@@ -30,10 +32,21 @@ public class AHMC {
 	public int totalRandomStep = 0;
 	public DoubleMatrix samples = null;
 	public boolean adjustReward = true;
+  private double epsilon;
+  private int L;
+  
+	public static AHMC initializeAHMCWithLBFGS(int numIterations, int burnIn, MultiVariateObj gradient, 
+      Objective func, int D) {
+	  return new AHMC(numIterations, burnIn, defaultEpsilonLBounds(), gradient, func, null, D);
+	}
 	
+	public AHMC(int numIterations, int burnIn, MultiVariateObj gradient, 
+	    Objective func, double [] initialPoint) {
+	  this(numIterations, burnIn, defaultEpsilonLBounds(), gradient, func, initialPoint, initialPoint.length);
+	}
 	
 	public AHMC(int numIterations, int burnIn, DoubleMatrix bound, 
-			MultiVariateObj gradient, Objective func, int D) {
+			MultiVariateObj gradient, Objective func, double [] initialPoint, int D) {
 		this.burnIn = burnIn;
 		this.numIterations = numIterations;
 		this.sizeAdapt = (int)Math.floor(this.burnIn/100.0);
@@ -41,16 +54,28 @@ public class AHMC {
 		this.D = D;
 		this.gradient = gradient;
 		this.fun = func;
-		this.initPt = this.initPoint();
-		this.samples = DoubleMatrix.zeros(this.numIterations-this.burnIn, this.D);
-		
+		if (initialPoint == null)
+		  initialPoint = initPoint();
+	  this.initPt = new DoubleMatrix(initialPoint).transpose();	
 		CovModel cov = new CovSEARD(hyper);
-		this.bo = new BayesOpt(0.0, initPt, cov, bound, noise);
+		
+		this.bo = new BayesOpt(0.0, convert(initEpsilon(), initL()), cov, bound, noise);
 		this.bo.setUseScale(true);
 		this.bo.setSooIter(200);
 	}
 	
-	private DoubleMatrix initPoint() {
+
+
+  /**
+	 * Call this before sample() to request all samples
+	 * be kept in a matrix.
+	 */
+	public void keepSamples()
+	{
+	  this.samples = DoubleMatrix.zeros(this.numIterations-this.burnIn, this.D);
+	}
+	
+	private double [] initPoint() {
 		LogDensity fun = new LogDensity(this.fun, this.gradient);
 		Minimizer alg = new Minimizer();
 		ArrayList<Bound> bounds = new ArrayList<Bound>();
@@ -62,7 +87,7 @@ public class AHMC {
 		
 		try {
 			Result result = alg.run(fun, new double[this.D]);
-			return new DoubleMatrix(result.point).transpose();
+			return result.point; //new DoubleMatrix(result.point).transpose();
 			
 		} catch (LBFGSBException e) {
 			e.printStackTrace();
@@ -79,11 +104,18 @@ public class AHMC {
 		return ptEval;
 	}
 	
-	public void sample() {
+	private double initEpsilon() {
+    return Math.exp(this.bound.rowMeans().toArray()[0]);
+  }
+	
+	private int initL() {
+	  return (int) Math.ceil(this.bound.rowMeans().toArray()[1]);
+	}
+	
+	public DoubleMatrix sample(Random rand) {
 		this.totalRandomStep = 0;
-		DoubleMatrix meanParam = this.bound.rowMeans();
-		double epsilon = Math.exp(meanParam.toArray()[0]);
-		int L = (int) Math.ceil(meanParam.toArray()[1]);
+		epsilon = initEpsilon();
+		L = initL();
 		int numAdapt = 0; double reward = 0;
 		DoubleMatrix ptEval = convert(epsilon, L); 
 		DoubleMatrix sample = this.initPt.transpose(); 
@@ -95,7 +127,7 @@ public class AHMC {
 				if (ii >= this.sizeAdapt) {this.bo.updateModel(ptEval, reward);}
 				double rate = anneal(ii);
 				
-				if (DoubleMatrix.rand(1).toArray()[0] < rate) {
+				if (rand.nextDouble() < rate) {
 					DoubleMatrix nextPt = this.bo.maximizeAcq(rate).
 							mul(this.bound.getColumn(1).
 							sub(this.bound.getColumn(0))).
@@ -104,22 +136,24 @@ public class AHMC {
 					L = (int) Math.ceil(nextPt.toArray()[1]);
 					ptEval = convert(epsilon, L);
 				}
-				System.out.format("Iter %3d L: %3d epsilon: %2.3f " +
-						"reward: %3.2f prob: %1.3f\n", 
+				System.out.format("Iter %3d L: %3d epsilon: %f " +
+						"reward: %f prob: %f\n", 
 						numAdapt, L, epsilon, reward, rate);
 				reward = 0;
 			}
-			DataStruct result = HMC.doIter(L, epsilon, sample, 
+			DataStruct result = HMC.doIter(rand, L, epsilon, sample, 
 					this.gradient, this.fun);
 			sample = result.next_q;
-			reward = reward + Math.pow(result.proposal.
-					sub(result.q).norm2(), 2)*result.mr;
+			reward = reward + (result.mr == 0.0 ? 0.0 : Math.pow(result.proposal.
+					sub(result.q).norm2(), 2)*result.mr);
 			
 			if (ii >= this.burnIn) {
-				this.samples.putRow(ii-this.burnIn, sample.transpose());
+			  if (this.samples != null)
+			    this.samples.putRow(ii-this.burnIn, sample.transpose());
 				this.totalRandomStep = this.totalRandomStep + result.RandomStep;
 			}
 		}
+		return sample;
 	}
 	
 	public double anneal(int ii) {
@@ -128,18 +162,42 @@ public class AHMC {
 		return anneal;
 	}
 	
+	public static DoubleMatrix defaultEpsilonLBounds()
+	{
+	  double[][] ba = {{Math.log(1e-3), Math.log(0.2)}, {1.0, 100.0}};
+    DoubleMatrix bound = new DoubleMatrix(ba);
+    return bound;
+	}
+	
 	public static void main(String args[]) {
+	  Random rand = new Random(1);
 		DoubleMatrix targetSigma = new DoubleMatrix(new double[][]
 				{{1.0, 0.99}, {0.99, 1.0}});
 		DoubleMatrix targetMean = new DoubleMatrix( new double[] {3.0, 5.0});
 		GaussianExample ge = new GaussianExample(targetSigma, targetMean);
-		double[][] ba = {{Math.log(1e-3), Math.log(0.2)}, {1.0, 100.0}};
-		DoubleMatrix bound = new DoubleMatrix(ba);
 		
-		AHMC ahmc = new AHMC(3000, 1000, bound, ge, ge, 2);
-		ahmc.sample();
+		
+//		AHMC ahmc = new AHMC(3000, 1000, bound, ge, ge, 2);
+		
+		AHMC ahmc = initializeAHMCWithLBFGS(3000, 1000, ge, ge, 2);
+		
+		ahmc.keepSamples();
+		ahmc.sample(rand);
+		ahmc.samples.columnMeans().print();
+		
+		ahmc.sample(rand);
 		ahmc.samples.columnMeans().print();
 	}
+
+  public double getEpsilon()
+  {
+    return epsilon;
+  }
+
+  public int getL()
+  {
+    return L;
+  }
 }
 
 class LogDensity implements DifferentiableFunction{

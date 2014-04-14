@@ -1,5 +1,7 @@
 package hmc;
 
+import java.util.Random;
+
 import org.jblas.DoubleMatrix;
 import utils.MultiVariateObj;
 import utils.Objective;
@@ -21,13 +23,13 @@ public class HMC {
 		this.func = func;
 	}
 	
-	public DoubleMatrix run(int burnIn, int totalNumSample, DoubleMatrix sample) {
+	public DoubleMatrix run(Random rand, int burnIn, int totalNumSample, DoubleMatrix sample) {
 		
 		DoubleMatrix samples = DoubleMatrix.zeros(totalNumSample-burnIn, 
 				sample.rows);
 		
 		for (int i = 0 ; i < totalNumSample; i++) {
-			DataStruct result = doIter(l, epsilon, sample, gradient, func);
+			DataStruct result = doIter(rand, l, epsilon, sample, gradient, func);
 			sample = result.next_q;
 			
 			if ((i+1)%100 == 0) {
@@ -42,16 +44,19 @@ public class HMC {
 		return samples;
 	}
 	
-	public static DataStruct doIter(int l, double epsilon, 
+	public static DataStruct doIter(Random rand, int l, double epsilon, 
 			DoubleMatrix lastSample, MultiVariateObj gradient, Objective func){
 		
 		int D = lastSample.rows;
-		int randomStep = (int)Math.ceil(DoubleMatrix.rand(1).toArray()[0]*l);
+		int randomStep = (int)Math.ceil(rand.nextDouble()*l);
 		
 		DoubleMatrix proposal = lastSample;
 
 		// Generate Momentum Vector
-		DoubleMatrix old_p = DoubleMatrix.randn(D).transpose();
+		DoubleMatrix old_p = new DoubleMatrix(D,1); 
+		for (int i = 0; i < D; i++)
+		  old_p.put(i, 0, rand.nextGaussian());
+		
 		DoubleMatrix p = old_p.sub(gradient.mFunctionValue(proposal)
 				.mmul(epsilon*0.5));
 		for (int ii = 0; ii < randomStep; ii++) {
@@ -78,7 +83,7 @@ public class HMC {
 		
 		boolean accept = true;
 		double energy = -proposed_E;
-		if (DoubleMatrix.rand(1).toArray()[0] > mr) {
+		if (rand.nextDouble() > mr) {
 			nextSample = lastSample;
 			accept = false;
 			energy = -original_E;
@@ -89,13 +94,14 @@ public class HMC {
 	}
 	
 	public static void main(String[] args) {
+	  Random rand = new Random(1);
 		DoubleMatrix targetSigma = new DoubleMatrix(new double[][]
 				{{1.0, 0.99}, {0.99, 1.0}});
 		DoubleMatrix targetMean = new DoubleMatrix( new double[]{3.0, 5.0});
 		GaussianExample ge = new GaussianExample(targetSigma, targetMean);
 		HMC hmc = new HMC(40, 0.05, ge, ge);
 		DoubleMatrix sample = new DoubleMatrix( new double[]{3.0, 5.0});
-		DoubleMatrix samples = hmc.run(0, 2000, sample);
+		DoubleMatrix samples = hmc.run(rand, 0, 2000, sample);
 		samples.columnMeans().print();
 	}
 }
