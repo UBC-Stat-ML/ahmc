@@ -1,0 +1,52 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'eclipse'
+
+uploadArchives {
+  repositories.mavenDeployer {
+    repository(url: "file:///Users/bouchard/Documents/web/public_html/maven/")
+    pom.version = " 1.0.0"
+    pom.artifactId = "ahmc-java"
+    pom.groupId = "ca.ubc"
+  }
+}
+
+eclipse { 
+  classpath {
+    defaultOutputDir = file('bin')
+  }
+}
+
+repositories {
+  mavenCentral()
+  jcenter()
+  maven {
+    url "file:///Users/bouchard/Documents/web/public_html/maven/"
+  }
+  maven {
+    url "http://www.stat.ubc.ca/~bouchard/maven/"
+  }
+  maven {
+    url "http://www.biojava.org/download/maven/"
+  }
+}
+
+dependencies {
+  testCompile group: 'junit', name: 'junit', version: '4.11'
+  compile group: 'ca.ubc.stat', name: 'bayonet', version: '2.1.0'
+  compile 'org.jblas:jblas:1.2.3'
+}
+
+apply plugin: 'versions'
+
+buildscript {
+  repositories {
+    maven { url "https://github.com/ben-manes/gradle-versions-plugin/raw/mvnrepo" }
+    mavenCentral()
+  }
+
+  dependencies {
+    classpath 'com.github.ben-manes:gradle-versions-plugin:0.5-beta-1'
+  }
+}
+
