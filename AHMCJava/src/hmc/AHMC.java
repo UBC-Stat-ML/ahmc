@@ -1,6 +1,7 @@
 package hmc;
 
 import lbfgsb.*;
+
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -9,9 +10,11 @@ import org.jblas.DoubleMatrix;
 import utils.MultiVariateObj;
 import utils.Objective;
 
+import bayonet.opt.LBFGSMinimizer;
 import bo.BayesOpt;
 import bo.kernel.CovModel;
 import bo.kernel.CovSEARD;
+import briefj.BriefLog;
 
 import lbfgsb.Bound;
 
@@ -55,7 +58,7 @@ public class AHMC {
 		this.gradient = gradient;
 		this.fun = func;
 		if (initialPoint == null)
-		  initialPoint = initPoint();
+		  initialPoint = initPoint_pureJava();
 	  this.initPt = new DoubleMatrix(initialPoint).transpose();	
 		CovModel cov = new CovSEARD(hyper);
 		
@@ -73,6 +76,36 @@ public class AHMC {
 	public void keepSamples()
 	{
 	  this.samples = DoubleMatrix.zeros(this.numIterations-this.burnIn, this.D);
+	}
+	
+	private double [] initPoint_pureJava() {
+	  BriefLog.warnOnce("Check this!");
+	  
+	  LBFGSMinimizer minimizer = new LBFGSMinimizer();
+	  
+	  bayonet.opt.DifferentiableFunction f = new bayonet.opt.DifferentiableFunction() {
+
+      @Override
+      public int dimension()
+      {
+        return AHMC.this.D;
+      }
+
+      @Override
+      public double valueAt(double[] x)
+      {
+        return AHMC.this.fun.functionValue(new DoubleMatrix(x));
+      }
+
+      @Override
+      public double[] derivativeAt(double[] x)
+      {
+        return AHMC.this.gradient.mFunctionValue(new DoubleMatrix(x)).data;
+      }
+	    
+	  };
+	  
+	  return minimizer.minimize(f, new double[this.D], 1e-5);
 	}
 	
 	private double [] initPoint() {

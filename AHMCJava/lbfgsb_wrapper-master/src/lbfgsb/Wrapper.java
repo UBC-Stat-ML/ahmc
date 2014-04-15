@@ -12,7 +12,8 @@ import lbfgsb.jniwrapper.*;
  */
 public class Wrapper{
 	static {
-		System.loadLibrary("lbfgsb_wrapper");
+	  System.load("/Users/bouchard/w/hmc-phylo-code/AHMCJava/lbfgsb_wrapper-master/dist/liblbfgsb_wrapper.dylib");
+//		System.loadLibrary("lbfgsb_wrapper");
 	}
 	
 	private lbfgsb data;
