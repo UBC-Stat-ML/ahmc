@@ -1,11 +1,11 @@
 package hmc;
 
-import lbfgsb.*;
+//import lbfgsb.*;
 
 import java.util.ArrayList;
 import java.util.Random;
 
-import lbfgsb.Minimizer;
+//import lbfgsb.Minimizer;
 import org.jblas.DoubleMatrix;
 import utils.MultiVariateObj;
 import utils.Objective;
@@ -16,7 +16,7 @@ import bo.kernel.CovModel;
 import bo.kernel.CovSEARD;
 import briefj.BriefLog;
 
-import lbfgsb.Bound;
+//import lbfgsb.Bound;
 
 public class AHMC {
 	private int burnIn = 0;
@@ -79,7 +79,6 @@ public class AHMC {
 	}
 	
 	private double [] initPoint_pureJava() {
-	  BriefLog.warnOnce("Check this!");
 	  
 	  LBFGSMinimizer minimizer = new LBFGSMinimizer();
 	  
@@ -106,27 +105,6 @@ public class AHMC {
 	  };
 	  
 	  return minimizer.minimize(f, new double[this.D], 1e-5);
-	}
-	
-	private double [] initPoint() {
-		LogDensity fun = new LogDensity(this.fun, this.gradient);
-		Minimizer alg = new Minimizer();
-		ArrayList<Bound> bounds = new ArrayList<Bound>();
-		
-		for (int i = 0; i < this.D ; i++) {
-			bounds.add(new Bound(null, null));
-		}
-		alg.setBounds(bounds);
-		
-		try {
-			Result result = alg.run(fun, new double[this.D]);
-			return result.point; //new DoubleMatrix(result.point).transpose();
-			
-		} catch (LBFGSBException e) {
-			e.printStackTrace();
-		}
-		
-		return null;
 	}
 	
 	private DoubleMatrix convert(double epsilon, int L) {
@@ -233,20 +211,20 @@ public class AHMC {
   }
 }
 
-class LogDensity implements DifferentiableFunction{
-	
-	private Objective func;
-	private MultiVariateObj gradient;
-	
-	public LogDensity(Objective func, MultiVariateObj gradient) {
-		this.func = func;
-		this.gradient = gradient;
-	}
-	
-	public FunctionValues getValues(double[] point){
-		DoubleMatrix vec = new DoubleMatrix(point);
-		double f = this.func.functionValue(vec);
-		double[] grad = this.gradient.mFunctionValue(vec).toArray();
-		return new FunctionValues(f, grad);
-	}
-}
+//class LogDensity {//implements DifferentiableFunction{
+//	
+//	private Objective func;
+//	private MultiVariateObj gradient;
+//	
+//	public LogDensity(Objective func, MultiVariateObj gradient) {
+//		this.func = func;
+//		this.gradient = gradient;
+//	}
+//	
+//	public FunctionValues getValues(double[] point){
+//		DoubleMatrix vec = new DoubleMatrix(point);
+//		double f = this.func.functionValue(vec);
+//		double[] grad = this.gradient.mFunctionValue(vec).toArray();
+//		return new FunctionValues(f, grad);
+//	}
+//}
