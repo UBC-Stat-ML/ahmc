@@ -39,20 +39,31 @@ public class AHMC {
   private int L;
   
 	public static AHMC initializeAHMCWithLBFGS(int numIterations, int burnIn, MultiVariateObj gradient, 
-      Objective func, int D) {
-	  return new AHMC(numIterations, burnIn, defaultEpsilonLBounds(), gradient, func, null, D);
+      Objective func, int D, int sizeAdapt) {
+	  return new AHMC(numIterations, burnIn, defaultEpsilonLBounds(), gradient, func, null, D, sizeAdapt);
 	}
+	
+	 public static AHMC initializeAHMCWithLBFGS(int numIterations, int burnIn, MultiVariateObj gradient, 
+	      Objective func, int D) {
+	    return new AHMC(numIterations, burnIn, defaultEpsilonLBounds(), gradient, func, null, D, (int)Math.floor(burnIn/100.0));
+	  }
 	
 	public AHMC(int numIterations, int burnIn, MultiVariateObj gradient, 
 	    Objective func, double [] initialPoint) {
 	  this(numIterations, burnIn, defaultEpsilonLBounds(), gradient, func, initialPoint, initialPoint.length);
 	}
 	
+	 public AHMC(int numIterations, int burnIn, DoubleMatrix bound, 
+	      MultiVariateObj gradient, Objective func, double [] initialPoint, int D) {
+	   this( numIterations,  burnIn,  bound, 
+         gradient,  func, initialPoint,  D, (int)Math.floor(burnIn/100.0) );
+	 }
+	
 	public AHMC(int numIterations, int burnIn, DoubleMatrix bound, 
-			MultiVariateObj gradient, Objective func, double [] initialPoint, int D) {
+			MultiVariateObj gradient, Objective func, double [] initialPoint, int D, int sizeAdapt) {
 		this.burnIn = burnIn;
 		this.numIterations = numIterations;
-		this.sizeAdapt = (int)Math.floor(this.burnIn/100.0);
+		this.sizeAdapt = sizeAdapt; //(int)Math.floor(this.burnIn/100.0);
 		this.bound = bound;
 		this.D = D;
 		this.gradient = gradient;
@@ -147,9 +158,9 @@ public class AHMC {
 					L = (int) Math.ceil(nextPt.toArray()[1]);
 					ptEval = convert(epsilon, L);
 				}
-				System.out.format("Iter %3d L: %3d epsilon: %f " +
-						"reward: %f prob: %f\n", 
-						numAdapt, L, epsilon, reward, rate);
+//				System.out.format("Iter %3d L: %3d epsilon: %f " +
+//						"reward: %f prob: %f\n", 
+//						numAdapt, L, epsilon, reward, rate);
 				reward = 0;
 			}
 			DataStruct result = HMC.doIter(rand, L, epsilon, sample, 
