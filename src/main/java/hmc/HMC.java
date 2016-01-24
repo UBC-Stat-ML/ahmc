@@ -45,10 +45,16 @@ public class HMC {
 	}
 	
 	public static DataStruct doIter(Random rand, int l, double epsilon, 
-			DoubleMatrix lastSample, MultiVariateObj gradient, Objective func){
+      DoubleMatrix lastSample, MultiVariateObj gradient, Objective func)
+  {
+	  return doIter(rand, l, epsilon, lastSample, gradient, func, true);
+  }
+	
+	public static DataStruct doIter(Random rand, int l, double epsilon, 
+			DoubleMatrix lastSample, MultiVariateObj gradient, Objective func,boolean randomizeNumberOfSteps){
 		
 		int D = lastSample.rows;
-		int randomStep = (int)Math.ceil(rand.nextDouble()*l);
+		int nSteps = randomizeNumberOfSteps ? (int)Math.ceil(rand.nextDouble()*l) : l;
 		
 		DoubleMatrix proposal = lastSample;
 
@@ -59,7 +65,7 @@ public class HMC {
 		
 		DoubleMatrix p = old_p.sub(gradient.mFunctionValue(proposal)
 				.mmul(epsilon*0.5));
-		for (int ii = 0; ii < randomStep; ii++) {
+		for (int ii = 0; ii < nSteps; ii++) {
 			proposal = proposal.add(p.mmul(epsilon));
 			p = p.sub(gradient.mFunctionValue(proposal)
 					.mmul(epsilon));
@@ -90,7 +96,7 @@ public class HMC {
 		}
 		
 		return new DataStruct(nextSample, accept, proposal, lastSample, 
-				mr, randomStep, energy);
+				mr, nSteps, energy);
 	}
 	
 	public static void main(String[] args) {

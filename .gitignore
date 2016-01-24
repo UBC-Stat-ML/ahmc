@@ -154,3 +154,4 @@ build/poms/pom-default.xml
 build/tmp/jar/MANIFEST.MF
 build
 /bin/
+.gradle/2.1/taskArtifacts
