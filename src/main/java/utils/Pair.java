@@ -39,6 +39,7 @@ public class Pair<L, R>
         {  
             return false;  
         }  
+        @SuppressWarnings("rawtypes")
         Pair pairo = (Pair) o;  
         return this.m_left.equals(pairo.getLeft()) &&  
                 this.m_right.equals(pairo.getRight());  

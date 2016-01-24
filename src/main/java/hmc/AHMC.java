@@ -2,7 +2,6 @@ package hmc;
 
 //import lbfgsb.*;
 
-import java.util.ArrayList;
 import java.util.Random;
 
 //import lbfgsb.Minimizer;
@@ -14,7 +13,6 @@ import bayonet.opt.LBFGSMinimizer;
 import bo.BayesOpt;
 import bo.kernel.CovModel;
 import bo.kernel.CovSEARD;
-import briefj.BriefLog;
 
 //import lbfgsb.Bound;
 
